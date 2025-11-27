@@ -1,12 +1,26 @@
+// src/components/Header.jsx
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom'; // Tambahkan useNavigate
 import { API_BASE_URL } from '../App';
 
 const Header = () => {
+  const navigate = useNavigate(); // Inisialisasi useNavigate
+  const [searchTerm, setSearchTerm] = useState(''); // State untuk input pencarian
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Untuk menu mobile
+
+  // Handler saat form pencarian disubmit
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      // Navigasi ke rute /search?s=kata_kunci
+      navigate(`/search?s=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm(''); // Reset input setelah pencarian
+      setIsMenuOpen(false); // Tutup menu mobile jika pencarian dilakukan dari sana
+    }
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -43,22 +57,26 @@ const Header = () => {
             <img src="/img/Folks-Daily-logo.png" alt="Folks Daily Logo" className="h-40" />
           </Link>
 
-          {/* 2. Desktop Navigation (Kategori Dinamis) */}
-          
-
-          {/* 3. Search Bar (Hanya Tampilan, Logika Pencarian Belum Diimplementasikan) */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* 2. Form Pencarian (Desktop/Tablet) */}
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center space-x-4">
             <input
               type="search"
               placeholder="Cari berita..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-red-500 focus:border-red-500 w-40"
+              aria-label="Input pencarian berita"
             />
-            <button className="text-gray-600 hover:text-red-600">
+            <button 
+              type="submit" 
+              className="p-1 text-gray-600 hover:text-red-600"
+              aria-label="Tombol cari"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
             </button>
-          </div>
+          </form>
           
           {/* Mobile Menu Button */}
           <button 
@@ -72,13 +90,37 @@ const Header = () => {
         </div>
       </div>
       
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu Dropdown & Search */}
       <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden bg-gray-50 border-t border-gray-200`}>
+        {/* Form Pencarian Mobile */}
+        <form onSubmit={handleSearchSubmit} className="p-4 border-b border-gray-200">
+          <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden">
+            <input
+              type="search"
+              placeholder="Cari berita..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 text-gray-700 focus:outline-none"
+              aria-label="Input pencarian mobile"
+            />
+            <button 
+              type="submit" 
+              className="p-2 text-gray-600 hover:text-red-600"
+              aria-label="Tombol cari mobile"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        {/* Navigasi Kategori Mobile */}
         <nav className="px-2 pt-2 pb-3 space-y-1">
           {categories.map((category) => (
             <NavLink
               key={category.id}
-              to={`/category/${category.id}`}
+              to={`/${category.slug}`}
               onClick={() => setIsMenuOpen(false)} // Tutup menu setelah klik
               className={({ isActive }) =>
                 `block px-3 py-2 rounded-md text-base font-medium transition duration-150 ease-in-out ${

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+// Tambahkan useLocation agar kita bisa memeriksa rute saat ini
+import { NavLink, useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../App';
 
 const CategoryNav = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation(); // <--- BARU: Ambil objek lokasi saat ini
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -16,11 +18,11 @@ const CategoryNav = () => {
         }
         const data = await response.json();
         
-        // Filter kategori: tambahkan opsi "Semua Berita" dan hilangkan "Uncategorized"
-        const filteredData = data.filter(cat => cat.name !== 'Uncategorized');
+        // Filter kategori: hilangkan "Uncategorized"
+        const filteredData = data.filter(cat => cat.slug !== 'uncategorized');
         
         // Tambahkan tombol 'Semua Berita' di awal
-        const allNewsOption = { id: 'all', name: 'Semua Berita', link: '/' };
+        const allNewsOption = { id: 'all', name: 'Semua Berita', slug: '/' };
 
         setCategories([allNewsOption, ...filteredData]);
       } catch (err) {
@@ -35,10 +37,11 @@ const CategoryNav = () => {
   
   // Fungsi untuk menentukan rute NavLink
   const getCategoryLink = (category) => {
-      return category.id === 'all' ? '/' : `/category/${category.id}`;
+    // PERBAIKAN SUDAH AMAN: Menggunakan slug
+    return category.id === 'all' ? '/' : `/${category.slug}`; 
   };
 
-  if (loading) return null; // Jangan tampilkan apa-apa jika masih loading
+  if (loading) return null; 
 
   return (
     <div className="w-full items-center mt-1 fixed py-3 z-10 mb-8 border-b border-t bg-white border-gray-200 overflow-x-auto whitespace-nowrap scrollbar-hide">
@@ -48,12 +51,13 @@ const CategoryNav = () => {
             key={category.id}
             to={getCategoryLink(category)}
             // Gunakan fungsi isActive untuk menentukan style aktif
-            className={({ isActive, isPending }) =>
-                `inline-flex items-center px-4 py-2 text-sm font-semibold rounded-full transition duration-200 ease-in-out ${
-                  (isActive || (category.id === 'all' && location.pathname === '/' && !location.pathname.startsWith('/category/'))) 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600'
-                }`
+            className={({ isActive }) =>
+              `inline-flex items-center px-4 py-2 text-sm font-semibold rounded-full transition duration-200 ease-in-out ${
+                // Logika Aktif: Aktif jika NavLink menganggapnya aktif, ATAU jika itu tombol 'Semua Berita' dan kita berada persis di root path '/'
+                (isActive || (category.id === 'all' && location.pathname === '/'))
+                ? 'bg-red-600 text-white shadow-lg' 
+                : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-600'
+              }`
             }
           >
             {category.name.toUpperCase()}
